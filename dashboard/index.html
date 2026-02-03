@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AIDBOT Fire Detection Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Courier New', monospace;
+  background: radial-gradient(ellipse at center bottom, #0a4a6b 0%, #0f0f1e 40%, #000000 100%);
+  background-attachment: fixed;
+  color: #00ffff;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ANIMATED STARS */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 60px 70px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 50px 50px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 130px 80px, #fff, rgba(0,0,0,0));
+  background-size: 200px 200px;
+  animation: twinkle 5s infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.hidden { display:none; }
+
+/* NEON GLOW EFFECT */
+@keyframes neon-glow {
+  0%, 100% { text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff; }
+  50% { text-shadow: 0 0 20px #00ffff, 0 0 30px #00ffff, 0 0 40px #00ffff; }
+}
+
+@keyframes border-glow {
+  0%, 100% { border-color: #00ffff; box-shadow: 0 0 10px #00ffff, inset 0 0 10px #00ffff22; }
+  50% { border-color: #ff00ff; box-shadow: 0 0 20px #ff00ff, inset 0 0 10px #ff00ff22; }
+}
+
+/* LOGIN CARD */
+#loginCard {
+  background: rgba(0, 30, 50, 0.85) !important;
+  border: 3px solid #00ffff !important;
+  border-radius: 15px !important;
+  padding: 50px 40px !important;
+  box-shadow: 0 0 60px #00ffff, inset 0 0 30px #00ffff22, 0 8px 32px rgba(0,0,0,0.5);
+  max-width: 380px !important;
+  margin: 120px auto !important;
+  position: relative;
+}
+
+#loginCard::before {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 30px;
+  border: 2px solid #00ffff;
+  border-radius: 50%;
+  box-shadow: 0 0 20px #00ffff;
+}
+
+#loginCard::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  right: 20px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ff00ff;
+  border-radius: 50%;
+  box-shadow: 0 0 15px #ff00ff;
+}
+
+#loginCard h2 {
+  color: #00ffff;
+  text-align: center;
+  font-size: 32px;
+  margin-bottom: 35px;
+  text-shadow: 0 0 20px #00ffff;
+  letter-spacing: 4px;
+  animation: neon-glow 2s infinite;
+  font-weight: bold;
+}
+
+#loginCard input {
+  width: 100% !important;
+  padding: 14px 15px !important;
+  margin-top: 18px !important;
+  border-radius: 4px !important;
+  border: 2px solid #00ffff !important;
+  background: rgba(0, 20, 40, 0.6) !important;
+  color: #00ffff !important;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  box-shadow: inset 0 0 15px #00ffff15;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#loginCard input::placeholder {
+  color: #00ffff66;
+  text-transform: uppercase;
+}
+
+#loginCard input:focus {
+  outline: none;
+  border-color: #ff00ff;
+  box-shadow: 0 0 20px #ff00ff, inset 0 0 15px #ff00ff15;
+  background: rgba(255, 0, 255, 0.05);
+}
+
+#loginCard button {
+  width: 100% !important;
+  padding: 14px !important;
+  margin-top: 25px !important;
+  border: 2px solid #00ffff !important;
+  background: rgba(0, 255, 255, 0.1) !important;
+  color: #00ffff !important;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  transition: all 0.3s;
+  text-shadow: 0 0 10px #00ffff;
+  box-shadow: 0 0 15px #00ffff;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+#loginCard button:hover {
+  background: rgba(0, 255, 255, 0.2) !important;
+  box-shadow: 0 0 30px #00ffff, inset 0 0 15px #00ffff;
+}
+
+#loginError {
+  color: #ff1744;
+  margin-top: 12px;
+  text-align: center;
+  text-shadow: 0 0 10px #ff1744;
+}
+
+/* HEADER */
+header {
+  padding: 20px 30px;
+  background: rgba(0, 0, 0, 0.8);
+  border-bottom: 2px solid #00ffff;
+  border-right: 2px solid #ff00ff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 0 20px #00ffff, 0 8px 16px #00000088;
+}
+
+header h2 {
+  color: #00ffff;
+  text-shadow: 0 0 10px #00ffff;
+  margin: 0;
+}
+
+header small {
+  color: #ff00ff;
+  display: block;
+}
+
+header button {
+  padding: 10px 20px !important;
+  border: 2px solid #ff1744 !important;
+  background: rgba(255, 23, 68, 0.1) !important;
+  color: #ff1744 !important;
+  cursor: pointer;
+  font-weight: bold;
+  box-shadow: 0 0 10px #ff1744;
+  transition: all 0.3s;
+}
+
+header button:hover {
+  box-shadow: 0 0 20px #ff1744;
+  background: rgba(255, 23, 68, 0.2) !important;
+}
+
+/* MAIN CONTENT */
+main {
+  padding: 30px;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: rgba(0, 255, 255, 0.05) !important;
+  border: 2px solid #00ffff !important;
+  border-radius: 0 !important;
+  padding: 20px !important;
+  box-shadow: 0 0 15px #00ffff, inset 0 0 10px #00ffff11;
+  clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+  transition: all 0.3s;
+}
+
+.card:hover {
+  border-color: #ff00ff;
+  box-shadow: 0 0 25px #ff00ff, inset 0 0 10px #ff00ff11;
+}
+
+.card h3 {
+  color: #ffff00;
+  text-shadow: 0 0 10px #ffff00;
+  margin-bottom: 15px;
+}
+
+.card > div {
+  margin: 10px 0;
+  color: #00ffff;
+  line-height: 1.6;
+}
+
+.chart-card {
+  grid-column: 1 / -1;
+  min-height: 350px;
+}
+
+/* BADGES */
+.badge {
+  padding: 6px 12px;
+  border-radius: 2px;
+  font-size: 12px;
+  font-weight: bold;
+  display: inline-block;
+  text-shadow: 0 0 8px;
+}
+
+.ok {
+  background: rgba(0, 255, 100, 0.2);
+  color: #00ff64;
+  border: 1px solid #00ff64;
+  text-shadow: 0 0 10px #00ff64;
+  box-shadow: 0 0 10px #00ff6433;
+}
+
+.warn {
+  background: rgba(255, 200, 0, 0.2);
+  color: #ffc800;
+  border: 1px solid #ffc800;
+  text-shadow: 0 0 10px #ffc800;
+  box-shadow: 0 0 10px #ffc80033;
+}
+
+.crit {
+  background: rgba(255, 0, 50, 0.2);
+  color: #ff0032;
+  border: 1px solid #ff0032;
+  text-shadow: 0 0 10px #ff0032;
+  box-shadow: 0 0 10px #ff003233;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00ffff;
+  box-shadow: 0 0 10px #00ffff;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff00ff;
+}
+/* MOTION OVERLAY STYLES */
+#motionOverlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 30% 20%, rgba(0,255,255,0.04), rgba(0,0,0,0.9));
+  z-index: 9999;
+  pointer-events: none;
+}
+#motionOverlay .motion-card {
+  pointer-events: auto;
+  width: 600px;
+  max-width: 92%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+#motionLogo {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 4px solid #00ffff;
+  box-shadow: 0 0 40px #00ffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg,#002b3a,#003f50);
+  transform: scale(0.8);
+  opacity: 0;
+  transition: transform .8s cubic-bezier(.2,.9,.2,1), opacity .8s;
+}
+#motionOverlay.play #motionLogo { transform: scale(1); opacity: 1; animation: logoPulse 1.6s ease-in-out infinite; }
+@keyframes logoPulse { 0% { box-shadow: 0 0 20px #00ffff44; transform: scale(1); } 50% { box-shadow: 0 0 40px #00ffff88; transform: scale(1.05); } 100% { box-shadow: 0 0 20px #00ffff44; transform: scale(1); } }
+.motion-wave { width: 100%; height: 4px; background: linear-gradient(90deg, transparent, #00ffff, transparent); opacity: 0; transform: translateY(10px); transition: all .6s ease; }
+#motionOverlay.play .motion-wave { opacity: 1; transform: translateY(0); animation: waveSweep 1.8s linear infinite; }
+@keyframes waveSweep { 0% { background-position: -200px; } 100% { background-position: 200px; } }
+.motion-text { color: #00ffff; text-shadow: 0 0 10px #00ffff; opacity: 0; transform: translateY(8px); transition: all .6s ease .2s; }
+#motionOverlay.play .motion-text { opacity: 1; transform: translateY(0); }
+/* motion overlay visibility states (use for fade instead of instant hide) */
+#motionOverlay { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .6s ease, visibility .6s ease; }
+#motionOverlay.motion-visible { opacity: 1; visibility: visible; pointer-events: auto; }
+#motionOverlay.motion-fade { opacity: 0; visibility: hidden; pointer-events: none; }
+
+/* Welcome toast that appears after motion overlay */
+#dashboardWelcome { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); background: rgba(0,20,30,0.8); border: 2px solid #00ffff; color: #00ffff; padding: 18px 28px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 18px; letter-spacing: 2px; box-shadow: 0 0 30px #00ffff; opacity: 0; pointer-events: none; transition: opacity .6s ease; z-index:10001; }
+#dashboardWelcome.toast-visible { opacity: 1; pointer-events: auto; }
+/* HUD / SVG animations */
+#motionLogo svg { width: 140px; height: 140px; display: block; }
+.hud-rot{ transform-origin: 50% 50%; animation: rotateCW 4s linear infinite; }
+.hud-rot-rev{ transform-origin: 50% 50%; animation: rotateCCW 3.6s linear infinite; }
+@keyframes rotateCW { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+@keyframes rotateCCW { from{transform:rotate(0deg)} to{transform:rotate(-360deg)} }
+.dash-anim { stroke-dasharray: 6 12; animation: dashMove 1.2s linear infinite; }
+@keyframes dashMove { to { stroke-dashoffset: -18; } }
+.ring-draw { stroke-dasharray: 440; stroke-dashoffset: 440; animation: drawRing 1.2s ease forwards; }
+@keyframes drawRing { to { stroke-dashoffset: 0; } }
+.bars { transform-origin: 50% 50%; animation: barsFade 1.6s ease-in-out infinite; }
+@keyframes barsFade { 0% { opacity: 0.6 } 50% { opacity: 1 } 100% { opacity: 0.6 } }
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginCard" class="card">
+  <h2>SIGN IN</h2>
+  <input id="email" type="email" placeholder="USER NAME">
+  <input id="password" type="password" placeholder="PASSWORD">
+  <button id="loginBtn">SIGN IN</button>
+  <div id="loginError"></div>
+</div>
+
+<body> </body>
+<!-- WELCOME PAGE -->
+<div id="welcomePage" class="hidden">
+  <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; background: rgba(0, 0, 0, 0.8); border-bottom: 2px solid #00ffff; box-shadow: 0 0 20px #00ffff;">
+    <div>
+      <h2 style="color: #00ffff; text-shadow: 0 0 10px #00ffff; margin: 0;">AIDBOT SYSTEM</h2>
+      <small style="color: #ff00ff;">ACCESS GRANTED</small>
+    </div>
+    <button id="logoutWelcomeBtn" style="padding: 8px 16px; border: 2px solid #ff1744; background: rgba(255, 23, 68, 0.1); color: #ff1744; cursor: pointer; font-weight: bold; box-shadow: 0 0 10px #ff1744;">LOGOUT</button>
+  </div>
+
+  <div style="display: flex; justify-content: center; align-items: center; min-height: 80vh; padding: 40px 20px; background: repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(0, 255, 255, 0.03) 50px, rgba(0, 255, 255, 0.03) 100px);">
+    
+    <div style="display: flex; gap: 40px; max-width: 1000px; width: 100%; align-items: center; position: relative;">
+      
+      <!-- LEFT SIDE: HEXAGON + IMAGE -->
+      <div style="flex: 0 0 200px; display: flex; justify-content: center;">
+        <div style="position: relative; width: 200px; height: 200px;">
+          <!-- HEXAGON AVATAR AREA -->
+          <div style="position: absolute; left: 0; top: 0; width: 200px; height: 200px; background: rgba(0, 255, 255, 0.1); border: 3px solid #00ffff; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 60px #00ffff, 0 0 80px #00ffff88; overflow: hidden;">
+            <img id="profilePicture" src="drake.jpg.jpg" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT SIDE: INFO WITH BLOCKS -->
+      <div style="flex: 1; position: relative;">
+        
+        <!-- BACKGROUND BLOCKS GRID -->
+        <div style="position: absolute; right: 0; top: 0; width: 250px; height: 250px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; opacity: 0.4;">
+          <div style="background: rgba(0, 255, 255, 0.3); border: 1px solid #00ffff; box-shadow: 0 0 10px #00ffff;"></div>
+          <div style="background: rgba(0, 255, 255, 0.3); border: 1px solid #00ffff; box-shadow: 0 0 10px #00ffff;"></div>
+          <div style="background: transparent; border: 1px solid #00ffff;"></div>
+          <div style="background: transparent; border: 1px solid #00ffff;"></div>
+          
+          <div style="background: transparent; border: 1px solid #00ffff;"></div>
+          <div style="background: rgba(0, 255, 255, 0.2); border: 1px solid #00ffff;"></div>
+          <div style="background: rgba(0, 255, 255, 0.2); border: 1px solid #00ffff;"></div>
+          <div style="background: rgba(0, 255, 255, 0.3); border: 1px solid #00ffff; box-shadow: 0 0 10px #00ffff;"></div>
+          
+          <div style="background: rgba(0, 255, 255, 0.3); border: 1px solid #00ffff; box-shadow: 0 0 10px #00ffff;"></div>
+          <div style="background: rgba(0, 255, 255, 0.2); border: 1px solid #00ffff;"></div>
+          <div style="background: transparent; border: 1px solid #00ffff;"></div>
+          <div style="background: transparent; border: 1px solid #00ffff;"></div>
+          
+          <div style="background: transparent; border: 1px solid #00ffff;"></div>
+          <div style="background: transparent; border: 1px solid #00ffff;"></div>
+          <div style="background: rgba(0, 255, 255, 0.25); border: 1px solid #00ffff;"></div>
+          <div style="background: rgba(0, 255, 255, 0.25); border: 1px solid #00ffff;"></div>
+        </div>
+
+        <!-- INFO CONTENT -->
+        <div style="position: relative; z-index: 10;">
+          <h3 style="color: #00ffff; text-shadow: 0 0 10px #00ffff; margin: 0 0 5px 0; letter-spacing: 2px; font-size: 12px; font-weight: normal;">AIDBOT SYSTEM ENTRY</h3>
+          <div style="height: 2px; background: linear-gradient(90deg, #00ffff, transparent); margin-bottom: 15px; width: 100px;"></div>
+
+          <h1 style="color: #ffffff; text-shadow: 0 0 20px #00ffff; margin: 0 0 5px 0; font-size: 28px; letter-spacing: 2px; line-height: 1.2;">HIGHEST<br>AUTHORIZATION</h1>
+
+          <div style="background: rgba(0, 255, 255, 0.08); padding: 20px; border-left: 3px solid #00ffff; margin: 20px 0; border-radius: 4px; backdrop-filter: blur(10px);">
+            <div style="color: #00ffff; font-size: 11px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">OPERATOR ID</div>
+            <div style="color: #ffffff; font-size: 22px; font-weight: bold; text-shadow: 0 0 10px #00ffff; margin-bottom: 12px;">Drake Marcus D. Limit</div>
+            
+            <div style="color: #00ffff; font-size: 11px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">DATE OF BIRTH</div>
+            <div style="color: #00ffff; font-size: 14px; margin-bottom: 12px;">2008-04-24</div>
+
+            <div style="color: #00ffff; font-size: 11px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">AGE STATUS</div>
+            <div style="color: #00ffff; font-size: 14px;">17 years old</div>
+          </div>
+        </div>
+
+        <!-- LOADING EFFECT BOTTOM RIGHT -->
+        <div style="position: absolute; bottom: 10px; right: 10px; display: flex; gap: 4px; align-items: center; z-index: 10;">
+          <style>
+            @keyframes pulse-loading {
+              0%, 100% { opacity: 0.3; }
+              50% { opacity: 1; }
+            }
+            .loading-dot {
+              width: 8px;
+              height: 8px;
+              background: #00ffff;
+              border-radius: 50%;
+              animation: pulse-loading 1.4s infinite;
+              box-shadow: 0 0 5px #00ffff;
+            }
+            .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+            .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+          </style>
+          <div class="loading-dot"></div>
+          <div class="loading-dot"></div>
+          <div class="loading-dot"></div>
+          <span style="color: #00ffff; font-size: 10px; margin-left: 8px; text-transform: uppercase; letter-spacing: 1px;">LOADING</span>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<!-- MOTION GRAPHICS OVERLAY (plays after welcome) -->
+<div id="motionOverlay" aria-hidden="true">
+  <div class="motion-card" role="status" aria-live="polite">
+    <div id="motionLogo" aria-hidden="false">
+      <!-- Animated HUD SVG: concentric rings + rotating dashed segments -->
+      <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="g1" x1="0%" x2="100%" y1="0%" y2="100%">
+            <stop offset="0%" stop-color="#00ffff" stop-opacity="0.95"/>
+            <stop offset="100%" stop-color="#00ffff" stop-opacity="0.6"/>
+          </linearGradient>
+        </defs>
+        <g class="hud-rot">
+          <circle cx="80" cy="80" r="46" fill="none" stroke="url(#g1)" stroke-width="3" class="ring-draw" stroke-linecap="round"/>
+        </g>
+        <g class="hud-rot-rev">
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#00ffff33" stroke-width="2" class="dash-anim"/>
+        </g>
+        <g class="bars hud-rot" transform="translate(0,0)">
+          <!-- small bars around the circle -->
+          <g transform="translate(80,80)">
+            <!-- generate 12 bars rotated -->
+            <g id="bars">
+              <rect x="-2" y="-74" width="4" height="12" rx="1" fill="#00ffff" opacity="0.85" transform="rotate(0)"/>
+            </g>
+            <!-- duplicated bars with rotation via use */-->
+            <g>
+              <g transform="rotate(0)"><rect x="-2" y="-74" width="4" height="12" rx="1" fill="#00ffff" opacity="0.9"/></g>
+              <g transform="rotate(30)"><rect x="-2" y="-74" width="4" height="10" rx="1" fill="#00ffff" opacity="0.8"/></g>
+              <g transform="rotate(60)"><rect x="-2" y="-74" width="4" height="14" rx="1" fill="#00ffff" opacity="0.75"/></g>
+              <g transform="rotate(90)"><rect x="-2" y="-74" width="4" height="11" rx="1" fill="#00ffff" opacity="0.85"/></g>
+              <g transform="rotate(120)"><rect x="-2" y="-74" width="4" height="9" rx="1" fill="#00ffff" opacity="0.7"/></g>
+              <g transform="rotate(150)"><rect x="-2" y="-74" width="4" height="12" rx="1" fill="#00ffff" opacity="0.9"/></g>
+              <g transform="rotate(180)"><rect x="-2" y="-74" width="4" height="13" rx="1" fill="#00ffff" opacity="0.8"/></g>
+              <g transform="rotate(210)"><rect x="-2" y="-74" width="4" height="10" rx="1" fill="#00ffff" opacity="0.75"/></g>
+              <g transform="rotate(240)"><rect x="-2" y="-74" width="4" height="14" rx="1" fill="#00ffff" opacity="0.85"/></g>
+              <g transform="rotate(270)"><rect x="-2" y="-74" width="4" height="11" rx="1" fill="#00ffff" opacity="0.7"/></g>
+              <g transform="rotate(300)"><rect x="-2" y="-74" width="4" height="12" rx="1" fill="#00ffff" opacity="0.9"/></g>
+              <g transform="rotate(330)"><rect x="-2" y="-74" width="4" height="10" rx="1" fill="#00ffff" opacity="0.8"/></g>
+            </g>
+          </g>
+        </g>
+        <!-- center label -->
+        <g>
+          <circle cx="80" cy="80" r="30" fill="#001218" opacity="0.6" stroke="#00ffff22" stroke-width="1"/>
+          <text x="80" y="80" text-anchor="middle" dominant-baseline="middle" fill="#00ffff" font-family="Courier New, monospace" font-size="14" letter-spacing="6">AIDBOT</text>
+        </g>
+      </svg>
+    </div>
+    <div class="motion-wave"></div>
+    <div class="motion-text">Initializing security systems…</div>
+  </div>
+</div>
+<!-- Welcome toast shown briefly after HUD fades and dashboard is visible -->
+<div id="dashboardWelcome" class="hidden" aria-hidden="true"></div>
+<div id="dashboard" class="hidden">
+
+<header>
+  <div>
+    <h2>AIDBOT – FIRE DETECTION</h2>
+    <small>ESP32 SYSTEM · LIVE MONITORING</small>
+  </div>
+  <button id="logoutBtn">LOGOUT</button>
+</header>
+
+<main>
+  <div class="grid">
+
+    <div class="card">
+      <h3> LIVE CAMERA</h3>
+      <div style="width: 100%; background: rgba(0, 0, 0, 0.5); border: 2px solid #00ffff; border-radius: 8px; overflow: hidden; position: relative;">
+        <img id="cameraStream" src="" style="width: 100%; display: block; aspect-ratio: 4/3; object-fit: cover;">
+        <div id="cameraStatus" style="position: absolute; top: 10px; right: 10px; background: rgba(255, 0, 50, 0.8); color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 12px;">OFFLINE</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>MQ-2 Gas Sensor</h3>
+      <div>Value: <span id="mq2">–</span></div>
+      <div>Status: <span id="mq2Status">–</span></div>
+      <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0,255,255,0.2); font-size: 11px;">
+        <div>Smoke Density: <span id="smokeDensity">0</span>%</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Flame Sensor</h3>
+      <div id="flame">–</div>
+    </div>
+
+    <div class="card">
+      <h3> Temperature</h3>
+      <div>Temp: <span id="temperature">–</span>°C</div>
+      <div style="margin-top: 8px; font-size: 12px; color: #00ff64;">Normal Range</div>
+    </div>
+
+    <div class="card">
+      <h3> Humidity</h3>
+      <div>Humidity: <span id="humidity">–</span>%</div>
+      <div style="margin-top: 8px; font-size: 12px; color: #00ff64;">Optimal Level</div>
+    </div>
+
+    <div class="card">
+      <h3> CO Sensor</h3>
+      <div>CO Level: <span id="coSensor">–</span> ppm</div>
+      <div id="coStatus" style="margin-top: 8px;"><span class="badge ok">SAFE</span></div>
+    </div>
+
+    <div class="card">
+      <h3> WiFi Signal</h3>
+      <div>RSSI: <span id="wifiSignal">–</span> dB</div>
+      <div id="signalStrength" style="margin-top: 8px;"><span class="badge ok">STRONG</span></div>
+    </div>
+
+    <div class="card">
+      <h3> Chip Temp</h3>
+      <div>ESP32 Temp: <span id="chipTemp">–</span>°C</div>
+      <div style="margin-top: 8px; font-size: 12px; color: #00ff64;">Normal</div>
+    </div>
+
+    <div class="card">
+      <h3>⏱ System Uptime</h3>
+      <div>Uptime: <span id="uptime">–</span></div>
+      <div style="margin-top: 8px; font-size: 11px; color: #00ffff;">Last Update: <span id="lastUpdate">–</span></div>
+    </div>
+
+    <div class="card">
+      <h3> Statistics</h3>
+      <div>Max: <span id="statMax">–</span></div>
+      <div>Avg: <span id="statAvg">–</span></div>
+      <div>Min: <span id="statMin">–</span></div>
+    </div>
+
+    <div class="card">
+      <h3> Thresholds</h3>
+      <div style="font-size: 12px;">
+        <div>MQ2 Warning: <input id="thresholdWarn" type="number" value="200" style="width: 60px; padding: 4px; background: rgba(0,255,255,0.1); border: 1px solid #00ffff; color: #00ffff; margin: 5px 0;"></div>
+        <div>MQ2 Critical: <input id="thresholdCrit" type="number" value="400" style="width: 60px; padding: 4px; background: rgba(0,255,255,0.1); border: 1px solid #00ffff; color: #00ffff; margin: 5px 0;"></div>
+        <button id="saveThresholds" style="width: 100%; padding: 6px; margin-top: 8px; background: rgba(0,255,255,0.1); border: 1px solid #00ffff; color: #00ffff; cursor: pointer; border-radius: 3px;">SAVE</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3> Alert Control</h3>
+      <div style="font-size: 12px;">
+        <label style="display: flex; align-items: center; gap: 8px; margin: 10px 0; cursor: pointer;">
+          <input id="buzzerToggle" type="checkbox" checked>
+          <span>Buzzer Enabled</span>
+        </label>
+        <button id="resetAlerts" style="width: 100%; padding: 8px; margin-top: 10px; background: rgba(255,0,50,0.1); border: 1px solid #ff0032; color: #ff0032; cursor: pointer; border-radius: 3px;">ACKNOWLEDGE ALERTS</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3> System Status</h3>
+      <div style="font-size: 12px;">
+        <label style="display: flex; align-items: center; gap: 8px; margin: 10px 0; cursor: pointer;">
+          <input id="systemToggle" type="checkbox" checked>
+          <span>Monitoring Enabled</span>
+        </label>
+        <div id="systemHealth" style="margin-top: 10px;"><span class="badge ok">HEALTHY</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Overall Alert</h3>
+      <div id="alertLevel">–</div>
+    </div>
+
+  </div>
+
+  <!-- HISTORY CHART -->
+  <div class="grid" style="margin-top: 30px;">
+    <div class="card chart-card">
+      <h3> SENSOR HISTORY (PAST 7 DAYS)</h3>
+      <canvas id="sensorChart" style="max-height: 300px;"></canvas>
+    </div>
+  </div>
+
+  <!-- ALERT HISTORY -->
+  <div class="grid" style="margin-top: 30px;">
+    <div class="card chart-card">
+      <h3> ALERT HISTORY LOG</h3>
+      <div id="alertHistory" style="max-height: 250px; overflow-y: auto; font-size: 12px;">
+        <div style="color: #00ffff; padding: 10px; text-align: center;">No alerts yet</div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- FIREBASE -->
+<!-- Simple audio elements (place your .mp3/.ogg files in sfx/ folder) -->
+<audio id="sfx-hud" src="sfx/hud.mp3" preload="auto"></audio>
+<audio id="sfx-welcome" src="sfx/welcome.mp3" preload="auto"></audio>
+<audio id="sfx-click" src="sfx/click.mp3" preload="auto"></audio>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+import {
+  getDatabase,
+  ref,
+  onValue,
+  off
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCC8TBv39JTppGdVQ2cXLOrSXGj-AmBEws",
+  authDomain: "aidbot-a6a03.firebaseapp.com",
+  databaseURL: "https://aidbot-a6a03-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "aidbot-a6a03",
+  storageBucket: "aidbot-a6a03.firebasestorage.app",
+  messagingSenderId: "188041820172",
+  appId: "1:188041820172:web:f8930b0e4244ecd8bdd629"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+// UI
+const loginCard = document.getElementById("loginCard");
+const welcomePage = document.getElementById("welcomePage");
+const dashboard = document.getElementById("dashboard");
+const mq2El = document.getElementById("mq2");
+const mq2Status = document.getElementById("mq2Status");
+const flameEl = document.getElementById("flame");
+const alertEl = document.getElementById("alertLevel");
+
+// ESP32 Camera Stream URL - UPDATE THIS WITH YOUR ESP32's IP ADDRESS
+const ESP32_IP = "192.168.1.100"; // Change this to your ESP32's IP
+const CAMERA_STREAM_URL = `http://${ESP32_IP}:80/stream`;
+
+let mq2Ref = null;
+let flameRef = null;
+let mq2Value = 0;
+let flameState = 0;
+let sensorChart = null;
+let mq2History = [];
+let flameHistory = [];
+let dateLabels = [];
+let systemStartTime = Date.now();
+let alertHistory = [];
+let monitoringEnabled = true;
+let buzzerEnabled = true;
+let MQ2_WARN = 200;
+let MQ2_CRIT = 400;
+
+// SYSTEM MONITORING FUNCTIONS
+function updateSystemInfo() {
+  // Update uptime
+  const uptime = Math.floor((Date.now() - systemStartTime) / 1000);
+  const hours = Math.floor(uptime / 3600);
+  const minutes = Math.floor((uptime % 3600) / 60);
+  document.getElementById("uptime").textContent = `${hours}h ${minutes}m`;
+  document.getElementById("lastUpdate").textContent = new Date().toLocaleTimeString();
+
+  // Simulate sensor data (replace with actual Firebase reads)
+  document.getElementById("temperature").textContent = (Math.random() * 10 + 25).toFixed(1);
+  document.getElementById("humidity").textContent = (Math.random() * 20 + 50).toFixed(0);
+  document.getElementById("coSensor").textContent = (Math.random() * 5 + 1).toFixed(1);
+  document.getElementById("chipTemp").textContent = (Math.random() * 5 + 35).toFixed(1);
+  document.getElementById("wifiSignal").textContent = (Math.random() * 20 - 70).toFixed(0);
+  
+  // Calculate smoke density percentage
+  const smokeDensity = Math.round((mq2Value / 1023) * 100);
+  document.getElementById("smokeDensity").textContent = smokeDensity;
+
+  // Update statistics
+  if (mq2History.length > 0) {
+    const max = Math.max(...mq2History);
+    const min = Math.min(...mq2History);
+    const avg = Math.round(mq2History.reduce((a, b) => a + b) / mq2History.length);
+    document.getElementById("statMax").textContent = max;
+    document.getElementById("statMin").textContent = min;
+    document.getElementById("statAvg").textContent = avg;
+  }
+}
+
+function addAlert(message, type = 'warn') {
+  const timestamp = new Date().toLocaleTimeString();
+  alertHistory.unshift({ message, type, timestamp });
+  if (alertHistory.length > 10) alertHistory.pop();
+  
+  updateAlertHistory();
+}
+
+function updateAlertHistory() {
+  const historyDiv = document.getElementById("alertHistory");
+  if (alertHistory.length === 0) {
+    historyDiv.innerHTML = '<div style="color: #00ffff; padding: 10px; text-align: center;">No alerts yet</div>';
+    return;
+  }
+  
+  historyDiv.innerHTML = alertHistory.map(alert => `
+    <div style="padding: 8px; border-bottom: 1px solid rgba(0,255,255,0.1); color: ${alert.type === 'crit' ? '#ff0032' : alert.type === 'warn' ? '#ffc800' : '#00ff64'};">
+      <div style="font-size: 10px; color: #00ffff;">${alert.timestamp}</div>
+      <div>${alert.message}</div>
+    </div>
+  `).join('');
+}
+
+/* ======================
+   LISTENER 1: AUTH
+====================== */
+function playMotionGraphics(duration = 5000) {
+  return new Promise(resolve => {
+    const motion = document.getElementById('motionOverlay');
+    const toast = document.getElementById('dashboardWelcome');
+    if (!motion) return resolve();
+
+    // show overlay (use motion-visible for fade-in)
+    motion.classList.remove('hidden', 'motion-fade');
+    void motion.offsetWidth;
+    motion.classList.add('motion-visible', 'play');
+
+    // after the main animation duration, fade the HUD out then show toast
+    setTimeout(() => {
+      motion.classList.remove('play', 'motion-visible');
+      motion.classList.add('motion-fade');
+
+      const onFadeEnd = (ev) => {
+        if (ev.target !== motion) return;
+        motion.removeEventListener('transitionend', onFadeEnd);
+        motion.classList.add('hidden');
+
+        // show welcome toast for a short time
+        if (toast) {
+          toast.textContent = 'Welcome Sir Drake!';
+          toast.classList.remove('hidden');
+          void toast.offsetWidth;
+          toast.classList.add('toast-visible');
+          setTimeout(() => {
+            toast.classList.remove('toast-visible');
+            toast.classList.add('hidden');
+            resolve();
+          }, 2200);
+        } else {
+          resolve();
+        }
+      };
+
+      motion.addEventListener('transitionend', onFadeEnd);
+    }, duration);
+  });
+}
+onAuthStateChanged(auth, user => {
+  if (user) {
+    loginCard.classList.add("hidden");
+    welcomePage.classList.remove("hidden");
+    dashboard.classList.add("hidden");
+    // Show welcome for 5 seconds, play motion graphics, then dashboard
+    setTimeout(async () => {
+      welcomePage.classList.add('hidden');
+      await playMotionGraphics(5000);
+      dashboard.classList.remove('hidden');
+      startDataListeners();
+      initSensorChart();
+    }, 5000);
+  } else {
+    stopDataListeners();
+    dashboard.classList.add("hidden");
+    welcomePage.classList.add("hidden");
+    loginCard.classList.remove("hidden");
+  }
+});
+
+/* ======================
+   LISTENER 2 & 3: DATA
+====================== */
+function startDataListeners() {
+  mq2Ref = ref(db, "AidBot/MQ2");
+  flameRef = ref(db, "AidBot/KY026");
+
+  // Initialize camera stream
+  initCameraStream();
+
+  // Update system info every second
+  setInterval(updateSystemInfo, 1000);
+
+  onValue(mq2Ref, snap => {
+    if (!monitoringEnabled) return;
+    
+    mq2Value = snap.val();
+    mq2El.textContent = mq2Value;
+
+    if (mq2Value >= MQ2_CRIT) {
+      mq2Status.innerHTML = `<span class="badge crit">HEAVY SMOKE</span>`;
+      addAlert(` CRITICAL: MQ2 = ${mq2Value}`, 'crit');
+    }
+    else if (mq2Value >= MQ2_WARN) {
+      mq2Status.innerHTML = `<span class="badge warn">SMOKE</span>`;
+      addAlert(` WARNING: MQ2 = ${mq2Value}`, 'warn');
+    }
+    else {
+      mq2Status.innerHTML = `<span class="badge ok">NORMAL</span>`;
+    }
+
+    updateChart();
+    updateAlert();
+  });
+
+  onValue(flameRef, snap => {
+    if (!monitoringEnabled) return;
+    
+    flameState = snap.val();
+    flameEl.innerHTML = flameState
+      ? `<span class="badge crit"> FLAME DETECTED</span>`
+      : `<span class="badge ok">SAFE</span>`;
+    
+    if (flameState && buzzerEnabled) {
+      addAlert(' FLAME DETECTED!', 'crit');
+    }
+    updateAlert();
+  });
+}
+
+
+function initCameraStream() {
+  const cameraImg = document.getElementById("cameraStream");
+  const cameraStatus = document.getElementById("cameraStatus");
+  
+  // Try to load the stream
+  const img = new Image();
+  img.onload = () => {
+    cameraStatus.textContent = "ONLINE";
+    cameraStatus.style.background = "rgba(0, 255, 100, 0.8)";
+  };
+  img.onerror = () => {
+    cameraStatus.textContent = "OFFLINE";
+    cameraStatus.style.background = "rgba(255, 0, 50, 0.8)";
+  };
+  img.src = CAMERA_STREAM_URL + "?t=" + Date.now();
+  
+  // Set the stream URL
+  cameraImg.src = CAMERA_STREAM_URL;
+}
+
+function initSensorChart() {
+  // Generate past 7 days labels
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    dateLabels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+  }
+
+  // Generate sample historical data (you'll replace this with Firebase data)
+  for (let i = 0; i < 7; i++) {
+    mq2History.push(Math.floor(Math.random() * 300) + 50);
+    flameHistory.push(0);
+  }
+
+  const ctx = document.getElementById("sensorChart").getContext("2d");
+  sensorChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: dateLabels,
+      datasets: [
+        {
+          label: 'MQ-2 Gas Sensor',
+          data: mq2History,
+          borderColor: '#00ffff',
+          backgroundColor: 'rgba(0, 255, 255, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5,
+          pointBackgroundColor: '#00ffff',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 2,
+          pointHoverRadius: 7,
+          shadowColor: 'rgba(0, 255, 255, 0.5)',
+          shadowBlur: 10
+        },
+        {
+          label: 'Flame Detected',
+          data: flameHistory,
+          borderColor: '#ff0032',
+          backgroundColor: 'rgba(255, 0, 50, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5,
+          pointBackgroundColor: '#ff0032',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 2,
+          pointHoverRadius: 7,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          labels: {
+            color: '#00ffff',
+            font: { size: 12, family: "'Courier New', monospace" },
+            boxWidth: 15,
+            padding: 20
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: {
+            color: 'rgba(0, 255, 255, 0.1)',
+            drawBorder: false
+          },
+          ticks: {
+            color: '#00ffff',
+            font: { size: 11, family: "'Courier New', monospace" }
+          }
+        },
+        y: {
+          grid: {
+            color: 'rgba(0, 255, 255, 0.1)',
+            drawBorder: false
+          },
+          ticks: {
+            color: '#00ffff',
+            font: { size: 11, family: "'Courier New', monospace" }
+          },
+          beginAtZero: true,
+          max: 500
+        }
+      }
+    }
+  });
+}
+
+function updateChart() {
+  // Update chart with new data
+  if (sensorChart) {
+    mq2History.shift();
+    mq2History.push(mq2Value);
+    
+    sensorChart.data.datasets[0].data = mq2History;
+    sensorChart.update('none');
+  }
+}
+
+function stopDataListeners() {
+  if (mq2Ref) off(mq2Ref);
+  if (flameRef) off(flameRef);
+}
+
+/* ======================
+   ALERT LOGIC
+====================== */
+function updateAlert() {
+  if (flameState === 1)
+    alertEl.innerHTML = `<span class="badge crit">CRITICAL FIRE</span>`;
+  else if (mq2Value >= MQ2_WARN)
+    alertEl.innerHTML = `<span class="badge warn">POSSIBLE FIRE</span>`;
+  else
+    alertEl.innerHTML = `<span class="badge ok">NORMAL</span>`;
+}
+
+/* ======================
+   LOGIN / LOGOUT
+====================== */
+document.getElementById("loginBtn").onclick = () => {
+  signInWithEmailAndPassword(
+    auth,
+    email.value,
+    password.value
+  ).catch(e => loginError.textContent = e.message);
+};
+
+document.getElementById("logoutBtn").onclick = () => signOut(auth);
+document.getElementById("logoutWelcomeBtn").onclick = () => signOut(auth);
+
+/* ======================
+   CONTROL BUTTONS & SETTINGS
+====================== */
+document.getElementById("saveThresholds").onclick = () => {
+  MQ2_WARN = parseInt(document.getElementById("thresholdWarn").value);
+  MQ2_CRIT = parseInt(document.getElementById("thresholdCrit").value);
+  alert("✓ Thresholds updated!");
+  addAlert(` Thresholds changed: Warning=${MQ2_WARN}, Critical=${MQ2_CRIT}`, 'warn');
+};
+
+document.getElementById("buzzerToggle").onchange = (e) => {
+  buzzerEnabled = e.target.checked;
+  addAlert(` Buzzer ${buzzerEnabled ? 'ENABLED' : 'DISABLED'}`, 'warn');
+};
+
+document.getElementById("systemToggle").onchange = (e) => {
+  monitoringEnabled = e.target.checked;
+  document.getElementById("systemHealth").innerHTML = monitoringEnabled 
+    ? `<span class="badge ok">HEALTHY</span>` 
+    : `<span class="badge warn">PAUSED</span>`;
+  addAlert(` Monitoring ${monitoringEnabled ? 'STARTED' : 'PAUSED'}`, 'warn');
+};
+
+document.getElementById("resetAlerts").onclick = () => {
+  alertHistory = [];
+  updateAlertHistory();
+  addAlert('✓ Alerts acknowledged', 'warn');
+};</script>
+
+</body>
+</html>
