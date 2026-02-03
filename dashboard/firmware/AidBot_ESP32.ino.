@@ -1,0 +1,71 @@
+#include <Arduino.h>
+#include <WiFi.h>
+#include <Firebase_ESP_Client.h>
+
+// ---- Wi-Fi credentials ----
+#define WIFI_SSID "PepperMutaLemon"
+#define WIFI_PASSWORD "M@y151986"
+
+// ---- Firebase credentials ----
+#define API_KEY "AIzaSyCC8TBv39JTppGdVQ2cXLOrSXGj-AmBEws"
+#define DATABASE_URL "https://aidbot-a6a03-default-rtdb.asia-southeast1.firebasedatabase.app/"
+
+// ---- Sensor pins ----
+#define MQ2_PIN 34        // Analog
+#define KY026_PIN 27      // Digital
+
+FirebaseData fbdo;
+FirebaseAuth auth;
+FirebaseConfig config;
+
+unsigned long lastSend = 0;
+const unsigned long interval = 1000; // 1 second
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(KY026_PIN, INPUT);
+
+  // Wi-Fi
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Connecting to Wi-Fi");
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(300);
+  }
+  Serial.println();
+  Serial.println("Wi-Fi connected");
+  Serial.println(WiFi.localIP());
+
+  // Firebase config
+  config.api_key = API_KEY;
+  config.database_url = DATABASE_URL;
+
+  // Anonymous auth
+  if (Firebase.signUp(&config, &auth, "", "")) {
+    Serial.println("Firebase sign-in OK");
+  } else {
+    Serial.printf("Firebase sign-up error: %s\n", config.signer.signupError.message.c_str());
+  }
+
+  Firebase.begin(&config, &auth);
+  Firebase.reconnectWiFi(true);
+}
+
+void loop() {
+  if (millis() - lastSend >= interval) {
+    lastSend = millis();
+
+    int mq2Value = analogRead(MQ2_PIN);
+    int kyRaw = digitalRead(KY026_PIN);
+    bool flameDetected = (kyRaw == LOW); // LOW = flame
+
+    Serial.print("MQ-2: ");
+    Serial.print(mq2Value);
+    Serial.print(" | Flame: ");
+    Serial.println(flameDetected ? "DETECTED" : "NO");
+
+    Firebase.RTDB.setInt(&fbdo, "/AidBot/MQ2", mq2Value);
+    Firebase.RTDB.setBool(&fbdo, "/AidBot/Flame", flameDetected);
+  }
+}
